@@ -8,8 +8,8 @@ namespace HydrogenBot.Database
 {
     public class DatabaseContext : DbContext
     {
-        public DbSet<TrackedEvent> TrackedEvents { get; set; } = null!;
-        public DbSet<TwitchEvent> TwitchEvents { get; set; } = null!;
+        public DbSet<SubscriptionInfo> SubscriptionInfo { get; set; } = null!;
+        public DbSet<TwitchSubscription> TwitchSubscription { get; set; } = null!;
 
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
         {

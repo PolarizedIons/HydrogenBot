@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using HydrogenBot.Database;
 using HydrogenBot.Extentions;
@@ -65,6 +67,13 @@ namespace HydrogenBot
                             MessageCacheSize = 100
                         }
                     ));
+
+                    services.AddSingleton(new CommandService(new CommandServiceConfig
+                    {
+                        DefaultRunMode = RunMode.Async,
+                        LogLevel = LogSeverity.Verbose,
+                        CaseSensitiveCommands = false
+                    }));
 
                     services.DiscoverAndMakeDiServicesAvailable();
 

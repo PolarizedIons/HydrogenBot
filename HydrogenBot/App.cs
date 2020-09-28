@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -20,14 +19,17 @@ namespace HydrogenBot
         private readonly IConfiguration _config;
         private readonly DiscordSocketClient _discord;
 
+        private readonly CommandHandler _commandHandler;
+
         public App(DatabaseContext databaseContext, IConfiguration config, DiscordSocketClient discord, IServiceProvider services)
         {
             _databaseContext = databaseContext;
             _config = config;
             _discord = discord;
 
-            // Required services
+            // Init required services
             services.GetRequiredService<BotLogger>();
+            _commandHandler = services.GetRequiredService<CommandHandler>();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -35,16 +37,14 @@ namespace HydrogenBot
             Log.Information("Migrating Database...");
             await _databaseContext.Database.MigrateAsync(cancellationToken: cancellationToken);
 
+            Log.Debug("Initializing command handler");
+            await _commandHandler.InitializeAsync();
+
             Log.Information("Logging in...");
             await _discord.LoginAsync(TokenType.Bot, _config["Bot:Token"]);
             await _discord.StartAsync();
             Log.Information("Bot started");
 
-                
-                
-            Log.Debug("test {@events}", _databaseContext.TwitchEvents.Include(x => x.TrackedEvent).ToList());
-                
-                
             await Task.Delay(-1, cancellationToken);
         }
 
