@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -18,7 +19,7 @@ namespace HydrogenBot.TypeReaders
             var channelTypeReader = new ChannelTypeReader<SocketChannel>();
             var roleTypeReader = new RoleTypeReader<SocketRole>();
 
-            var inputQueue = new Queue<string>(input.Split(" "));
+            var inputQueue = new Queue<string>(input.Split(" ").Select(x => x.Trim()));
             var channelStr = inputQueue.Dequeue();
             var channelReaderResult = await channelTypeReader.ReadAsync(context, channelStr, services);
             if (!channelReaderResult.IsSuccess)

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using HydrogenBot.Database;
 using HydrogenBot.Database.DbModels;
 using HydrogenBot.Models;
+using HydrogenBot.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace HydrogenBot.Providers
@@ -11,13 +12,15 @@ namespace HydrogenBot.Providers
     public class TwitchProvider : IProvider
     {
         private readonly DatabaseContext _db;
+        private readonly TwitchService _twitch;
 
-        public TwitchProvider(DatabaseContext db)
+        public TwitchProvider(DatabaseContext db, TwitchService twitch)
         {
             _db = db;
+            _twitch = twitch;
         }
 
-        public ProviderMatchResult MatchId(string id)
+        public async Task<ProviderMatchResult> MatchId(string id)
         {
             if (!id.StartsWith("http://") && !id.StartsWith("https://"))
             {
@@ -35,24 +38,26 @@ namespace HydrogenBot.Providers
                 return new ProviderMatchResult();
             }
 
+            var twitchUserDto = await _twitch.FromName(uri.Segments[1]);
             return new ProviderMatchResult()
             {
-                MatchData = uri.Segments[1]
+                MatchData = twitchUserDto?.Id ?? 0
             };
         }
 
         public async Task<bool> Subscribe(NotifyString notifyString, object? matchData)
         {
-            var channel = matchData as string;
-            if (string.IsNullOrEmpty(channel))
+            var twitchId = (uint)(matchData ?? 0);
+            if (twitchId == 0)
             {
                 return false;
             }
 
+            var streamInfo = await _twitch.StreamInfo(twitchId);
             _db.TwitchSubscription.Add(new TwitchSubscription
             {
-                Online = false,
-                Streamer = channel,
+                Online = streamInfo.IsOnline,
+                StreamerId = twitchId,
                 SubscriptionInfo = new SubscriptionInfo
                 {
                     Channel = notifyString.ChannelId,
@@ -66,8 +71,8 @@ namespace HydrogenBot.Providers
 
         public async Task<bool> Unsubscribe(NotifyString notifyString, object? matchData)
         {
-            var channel = matchData as string;
-            if (string.IsNullOrEmpty(channel))
+            var twitchId = (uint)(matchData ?? 0);
+            if (twitchId == 0)
             {
                 return false;
             }
@@ -75,18 +80,23 @@ namespace HydrogenBot.Providers
             var subscription = _db.TwitchSubscription
                 .Include(x => x.SubscriptionInfo
                 )
-                .FirstOrDefault(x => x.Streamer == channel &&
+                .FirstOrDefault(x => x.StreamerId == twitchId &&
                                      x.SubscriptionInfo.Channel == notifyString.ChannelId &&
-                                     x.SubscriptionInfo.MentionString == notifyString.MentionString);
+                                     x.SubscriptionInfo.MentionString == notifyString.MentionString &&
+                                     x.DeletedAt == null);
 
             if (subscription == null)
             {
                 return false;
             }
-            
-            _db.Remove(subscription);
+
+            subscription.DeletedAt = DateTime.UtcNow;
+            subscription.SubscriptionInfo.DeletedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }
+
+        public string SubscribedText => "I'll notify you when they go live.";
+        public string UnsubscribedText => "I'll stop notifying you when they go live.";
     }
 }

@@ -19,31 +19,43 @@ namespace HydrogenBot.Commands
         [Command("notify")]
         public async Task Subscribe([Remainder] NotifyString notifyString)
         {
-            await ReplyAsync(JsonSerializer.Serialize(notifyString));
-
-            var provider = _providerManagerService.Identify(notifyString.ServiceId, out var matchData);
-            if (provider == null)
+            var providerId = await _providerManagerService.Identify(notifyString.ServiceId);
+            if (providerId == null)
             {
                 await ReplyAsync("No such service; Usage: " + Usage);
                 return;
             }
 
-            await provider.Subscribe(notifyString, matchData);
+            var success = await providerId.Provider.Subscribe(notifyString, providerId.MatchData);
+            if (success)
+            {
+                await ReplyAsync("Success: " + providerId.Provider.SubscribedText);
+            }
+            else
+            {
+                await ReplyAsync("Error: Could not subscribe you");
+            }
         }
 
         [Command("stop notifying")]
         public async Task Unsubscribe([Remainder] NotifyString notifyString)
         {
-            await ReplyAsync(JsonSerializer.Serialize(notifyString));
-
-            var provider = _providerManagerService.Identify(notifyString.ServiceId, out var matchData);
-            if (provider == null)
+            var providerId = await _providerManagerService.Identify(notifyString.ServiceId);
+            if (providerId == null)
             {
                 await ReplyAsync("No such service; Usage: " + Usage);
                 return;
             }
 
-            await provider.Unsubscribe(notifyString, matchData);
+            var success = await providerId.Provider.Unsubscribe(notifyString, providerId.MatchData);
+            if (success)
+            {
+                await ReplyAsync("Success: " + providerId.Provider.UnsubscribedText);
+            }
+            else
+            {
+                await ReplyAsync("Error: Could not unsubscribe you.");
+            }
         }
     }
 }

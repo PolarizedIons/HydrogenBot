@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HydrogenBot.Extentions;
 using HydrogenBot.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,19 +18,21 @@ namespace HydrogenBot.Services
                 .Select(x => (IProvider) services.GetRequiredService(x)).ToArray();
         }
 
-        public IProvider? Identify(string id, out object? matchData)
+        public async Task<IdentifiedProvider?> Identify(string id)
         {
             foreach (var provider in _notificationProviderServices)
             {
-                var matchResult = provider.MatchId(id);
+                var matchResult = await provider.MatchId(id);
                 if (matchResult.IsSuccess)
                 {
-                    matchData = matchResult.MatchData;
-                    return provider;
+                    return new IdentifiedProvider
+                    {
+                        Provider = provider,
+                        MatchData = matchResult.MatchData,
+                    };
                 }
             }
 
-            matchData = null;
             return null;
         }
     }
