@@ -53,12 +53,28 @@ namespace HydrogenBot.Providers
             };
         }
 
-        public async Task<bool> Subscribe(NotifyString notifyString, object? matchData)
+        public async Task Subscribe(NotifyString notifyString, object? matchData, ICommandContext commandContext)
         {
+            var username = GetUsernameFromUrl(notifyString.ServiceId);
             var twitchId = (uint)(matchData ?? 0);
             if (twitchId == 0)
             {
-                return false;
+                await commandContext.Channel.SendMessageAsync($"Error! {username} is not a valid twitch user!");
+                return;
+            }
+
+            var currentSubscription = await _db.TwitchSubscription
+                .Include(x => x.SubscriptionInfo)
+                .FirstOrDefaultAsync(x =>
+                    x.StreamerId == twitchId &&
+                    x.SubscriptionInfo.Channel == notifyString.ChannelId &&
+                    x.DeletedAt == null
+                );
+
+            if (currentSubscription != null)
+            {
+                await commandContext.Channel.SendMessageAsync($"Error: <#{commandContext.Channel.Id}> is already subscribed to {username}'s twitch streams!");
+                return;
             }
 
             var streamInfo = (await _twitch.BatchStreamInfo(new[] {twitchId})).ToArray();
@@ -74,15 +90,17 @@ namespace HydrogenBot.Providers
             });
 
             await _db.SaveChangesAsync();
-            return true;
+            await commandContext.Channel.SendMessageAsync($"<#{commandContext.Channel.Id}> is now subscribed to {username}'s twitch streams!");
         }
 
-        public async Task<bool> Unsubscribe(NotifyString notifyString, object? matchData)
+        public async Task Unsubscribe(NotifyString notifyString, object? matchData, ICommandContext commandContext)
         {
+            var username = GetUsernameFromUrl(notifyString.ServiceId);
             var twitchId = (uint)(matchData ?? 0);
             if (twitchId == 0)
             {
-                return false;
+                await commandContext.Channel.SendMessageAsync($"Error! {username} is not a valid twitch user!");
+                return;
             }
 
             var subscription = _db.TwitchSubscription
@@ -90,42 +108,19 @@ namespace HydrogenBot.Providers
                 )
                 .FirstOrDefault(x => x.StreamerId == twitchId &&
                                      x.SubscriptionInfo.Channel == notifyString.ChannelId &&
-                                     x.SubscriptionInfo.MentionString == notifyString.MentionString &&
-                                     x.DeletedAt == null);
+                                     x.DeletedAt == null
+                );
 
             if (subscription == null)
             {
-                return false;
+                await commandContext.Channel.SendMessageAsync($"Error: <#{commandContext.Channel.Id}> is not subscribed to {username}'s twitch streams!");
+                return;
             }
 
             subscription.DeletedAt = DateTime.UtcNow;
             subscription.SubscriptionInfo.DeletedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
-            return true;
-        }
-
-        public Task OnSubscribed(ICommandContext context, NotifyString notifyString)
-        {
-            var username = GetUsernameFromUrl(notifyString.ServiceId);
-            return context.Channel.SendMessageAsync($"Success! <#{context.Channel.Id}> is now subscribed to twitch notifications for {username}!");
-        }
-
-        public Task OnSubscribedError(ICommandContext context, NotifyString notifyString)
-        {
-            var username = GetUsernameFromUrl(notifyString.ServiceId);
-            return context.Channel.SendMessageAsync($"Error! Could not subscribe to twitch notifications for {username}");
-        }
-
-        public Task OnUnsubscribed(ICommandContext context, NotifyString notifyString)
-        {
-            var username = GetUsernameFromUrl(notifyString.ServiceId);
-            return context.Channel.SendMessageAsync($"Success! <#{context.Channel.Id}> is no longer subscribed to twitch notifications for {username}!");
-        }
-
-        public Task OnUnsubscribedError(ICommandContext context, NotifyString notifyString)
-        {
-            var username = GetUsernameFromUrl(notifyString.ServiceId);
-            return context.Channel.SendMessageAsync($"Error! Could not unsubscribe to twitch notifications for {username}");
+            await commandContext.Channel.SendMessageAsync($"<#{commandContext.Channel.Id}> is now unsubscribed from {username}'s twitch streams!");
         }
     }
 }

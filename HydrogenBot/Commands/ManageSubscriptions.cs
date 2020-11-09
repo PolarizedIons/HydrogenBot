@@ -26,15 +26,7 @@ namespace HydrogenBot.Commands
                 return;
             }
 
-            var success = await providerId.Provider.Subscribe(notifyString, providerId.MatchData);
-            if (success)
-            {
-                await providerId.Provider.OnSubscribed(Context, notifyString);
-            }
-            else
-            {
-                await providerId.Provider.OnSubscribedError(Context, notifyString);
-            }
+            await providerId.Provider.Subscribe(notifyString, providerId.MatchData, Context);
         }
 
         [Command("stop notifying")]
@@ -47,15 +39,7 @@ namespace HydrogenBot.Commands
                 return;
             }
 
-            var success = await providerId.Provider.Unsubscribe(notifyString, providerId.MatchData);
-            if (success)
-            {
-                await providerId.Provider.OnUnsubscribed(Context, notifyString);
-            }
-            else
-            {
-                await providerId.Provider.OnUnsubscribedError(Context, notifyString);
-            }
+            await providerId.Provider.Unsubscribe(notifyString, providerId.MatchData, Context);
         }
     }
 }
