@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord.Commands;
 using HydrogenBot.Database;
 using HydrogenBot.Database.DbModels;
 using HydrogenBot.Models;
@@ -20,25 +21,32 @@ namespace HydrogenBot.Providers
             _twitch = twitch;
         }
 
-        public async Task<ProviderMatchResult> MatchId(string id)
+        private string? GetUsernameFromUrl(string url)
         {
-            if (!id.StartsWith("http://") && !id.StartsWith("https://"))
+            if (!url.StartsWith("http://") && !url.StartsWith("https://"))
             {
-                return new ProviderMatchResult();
+                return null;
             }
 
-            var uri = new Uri(id);
+            var uri = new Uri(url);
             if (uri.Host != "twitch.tv" && uri.Host != "www.twitch.tv")
             {
-                return new ProviderMatchResult();
+                return null;
             }
 
-            if (uri.Segments.Length != 2)
+            return uri.Segments.Length == 2 ? uri.Segments[1] : null;
+        }
+
+        public async Task<ProviderMatchResult> MatchId(string id)
+        {
+            var username = GetUsernameFromUrl(id);
+
+            if (username == null)
             {
                 return new ProviderMatchResult();
             }
 
-            var twitchUserDto = await _twitch.FromName(uri.Segments[1]);
+            var twitchUserDto = await _twitch.FromName(username);
             return new ProviderMatchResult()
             {
                 MatchData = twitchUserDto?.Id ?? 0
@@ -96,7 +104,28 @@ namespace HydrogenBot.Providers
             return true;
         }
 
-        public string SubscribedText => "I'll notify you when they go live.";
-        public string UnsubscribedText => "I'll stop notifying you when they go live.";
+        public Task OnSubscribed(ICommandContext context, NotifyString notifyString)
+        {
+            var username = GetUsernameFromUrl(notifyString.ServiceId);
+            return context.Channel.SendMessageAsync($"Success! <#{context.Channel.Id}> is now subscribed to twitch notifications for {username}!");
+        }
+
+        public Task OnSubscribedError(ICommandContext context, NotifyString notifyString)
+        {
+            var username = GetUsernameFromUrl(notifyString.ServiceId);
+            return context.Channel.SendMessageAsync($"Error! Could not subscribe to twitch notifications for {username}");
+        }
+
+        public Task OnUnsubscribed(ICommandContext context, NotifyString notifyString)
+        {
+            var username = GetUsernameFromUrl(notifyString.ServiceId);
+            return context.Channel.SendMessageAsync($"Success! <#{context.Channel.Id}> is no longer subscribed to twitch notifications for {username}!");
+        }
+
+        public Task OnUnsubscribedError(ICommandContext context, NotifyString notifyString)
+        {
+            var username = GetUsernameFromUrl(notifyString.ServiceId);
+            return context.Channel.SendMessageAsync($"Error! Could not unsubscribe to twitch notifications for {username}");
+        }
     }
 }

@@ -29,11 +29,11 @@ namespace HydrogenBot.Commands
             var success = await providerId.Provider.Subscribe(notifyString, providerId.MatchData);
             if (success)
             {
-                await ReplyAsync("Success: " + providerId.Provider.SubscribedText);
+                await providerId.Provider.OnSubscribed(Context, notifyString);
             }
             else
             {
-                await ReplyAsync("Error: Could not subscribe you");
+                await providerId.Provider.OnSubscribedError(Context, notifyString);
             }
         }
 
@@ -50,11 +50,11 @@ namespace HydrogenBot.Commands
             var success = await providerId.Provider.Unsubscribe(notifyString, providerId.MatchData);
             if (success)
             {
-                await ReplyAsync("Success: " + providerId.Provider.UnsubscribedText);
+                await providerId.Provider.OnUnsubscribed(Context, notifyString);
             }
             else
             {
-                await ReplyAsync("Error: Could not unsubscribe you.");
+                await providerId.Provider.OnUnsubscribedError(Context, notifyString);
             }
         }
     }
