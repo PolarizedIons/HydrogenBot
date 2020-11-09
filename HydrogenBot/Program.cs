@@ -81,52 +81,58 @@ namespace HydrogenBot
 
                     services.DiscoverAndMakeDiServicesAvailable();
 
-                    services.AddQuartz(q =>
-                    {
-                        q.SchedulerId = "BotScheduler";
-
-                        q.UseMicrosoftDependencyInjectionScopedJobFactory(options =>
-                        {
-                            options.AllowDefaultConstructor = true;
-                        });
-
-                        q.UseSimpleTypeLoader();
-                        q.UseInMemoryStore();
-                        q.UseDefaultThreadPool(tp => { tp.MaxConcurrency = 10; });
-
-                        // configure jobs with code
-                        var jobs = typeof(BaseJob).GetAllInAssembly();
-                        var addJobMethod = typeof(ServiceCollectionExtensions).GetMethod(nameof(ServiceCollectionExtensions.AddJob));
-                        foreach (var job in jobs)
-                        {
-                            var jobKey = new JobKey(job.Name);
-                            var jobGeneric = addJobMethod?.MakeGenericMethod(job);
-                            var interval = (int?) job.GetProperty(nameof(BaseJob.SecondsInterval))?.GetValue(null);
-
-                            if (jobGeneric == null || interval == null)
-                            {
-                                continue;
-                            }
-                            jobGeneric.Invoke(null, parameters: new object?[]
-                            {
-                                q,
-                                new Action<IServiceCollectionJobConfigurator>(j => j.StoreDurably().WithIdentity(jobKey)),
-                            });
-
-                            q.AddTrigger(t =>
-                                t.ForJob(jobKey)
-                                    .StartAt(DateTime.UtcNow.AddSeconds(5)) // enough to log into discord
-                                    .WithSimpleSchedule(x => x.WithIntervalInSeconds(interval.Value).RepeatForever())
-                            );
-                        }
-                    });
-
-                    services.AddQuartzServer(options => { options.WaitForJobsToComplete = true; });
+                    ConfigureQuartz(services);
+                    
 
                     services.AddHostedService<App>();
                 })
                 .UseSerilog()
                 .UseConsoleLifetime();
+        }
+
+        private static void ConfigureQuartz(IServiceCollection services)
+        {
+            services.AddQuartz(q =>
+            {
+                q.SchedulerId = "BotScheduler";
+
+                q.UseMicrosoftDependencyInjectionScopedJobFactory(options =>
+                {
+                    options.AllowDefaultConstructor = true;
+                });
+
+                q.UseSimpleTypeLoader();
+                q.UseInMemoryStore();
+                q.UseDefaultThreadPool(tp => { tp.MaxConcurrency = 10; });
+
+                // configure jobs with code
+                var jobs = typeof(BaseJob).GetAllInAssembly();
+                var addJobMethod = typeof(ServiceCollectionExtensions).GetMethod(nameof(ServiceCollectionExtensions.AddJob));
+                foreach (var job in jobs)
+                {
+                    var jobKey = new JobKey(job.Name);
+                    var jobGeneric = addJobMethod?.MakeGenericMethod(job);
+                    var interval = (int?) job.GetProperty(nameof(BaseJob.SecondsInterval))?.GetValue(null);
+
+                    if (jobGeneric == null || interval == null)
+                    {
+                        continue;
+                    }
+                    jobGeneric.Invoke(null, parameters: new object?[]
+                    {
+                        q,
+                        new Action<IServiceCollectionJobConfigurator>(j => j.StoreDurably().WithIdentity(jobKey)),
+                    });
+
+                    q.AddTrigger(t =>
+                        t.ForJob(jobKey)
+                            .StartAt(DateTime.UtcNow.AddSeconds(5)) // enough to log into discord
+                            .WithSimpleSchedule(x => x.WithIntervalInSeconds(interval.Value).RepeatForever())
+                    );
+                }
+            });
+
+            services.AddQuartzServer(options => { options.WaitForJobsToComplete = true; });
         }
     }
 }

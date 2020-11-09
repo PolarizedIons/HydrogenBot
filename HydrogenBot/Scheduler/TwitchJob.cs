@@ -35,19 +35,17 @@ namespace HydrogenBot.Scheduler
                 .Where(x => x.DeletedAt == null)
                 .Include(x => x.SubscriptionInfo);
 
-            var isOnlineCache = new Dictionary<ulong, TwitchSteamInfoResponse>();
+            var channelIds = await subscriptions.Select(x => x.StreamerId).ToListAsync();
+            var streamInfos = await _twitch.BatchStreamInfo(channelIds);
+            var isOnlineCache = streamInfos.ToDictionary(streamInfo => streamInfo.Channel.Id);
+
             foreach (var subscription in subscriptions)
             {
                 var streamInfo = isOnlineCache.ContainsKey(subscription.StreamerId)
                     ? isOnlineCache[subscription.StreamerId]
-                    : await _twitch.StreamInfo(subscription.StreamerId);
+                    : null;
                 var wasOnline = subscription.Online;
-                var isOnlineNow = streamInfo.IsOnline;
-
-                if (!isOnlineCache.ContainsKey(subscription.StreamerId))
-                {
-                    isOnlineCache.Add(subscription.StreamerId, streamInfo);
-                }
+                var isOnlineNow = isOnlineCache.ContainsKey(subscription.StreamerId);
 
                 if (wasOnline && !isOnlineNow)
                 {
@@ -56,19 +54,22 @@ namespace HydrogenBot.Scheduler
                     continue;
                 }
 
-                if (!wasOnline && isOnlineNow)
+                if (wasOnline || !isOnlineNow)
                 {
-                    subscription.Online = true;
-                    Log.Debug("Streamer {channelId} is now online", subscription.StreamerId);
-                    var channel = _discord.GetChannel(subscription.SubscriptionInfo.Channel);
-                    if (channel is ISocketMessageChannel c)
-                    {
-                        var mentionString = string.IsNullOrEmpty(subscription.SubscriptionInfo.MentionString) ? "" : subscription.SubscriptionInfo.MentionString + ", ";
-                        var game = streamInfo.Steam?.Game;
-                        var name = streamInfo.Steam?.Channel.DisplayName.EscapeDiscordCharacters();
-                        var url = streamInfo.Steam?.Channel.Url;
-                        await c.SendMessageAsync($"{mentionString}{name} is now online playing {game} over at {url} !");
-                    }
+                    continue;
+                }
+
+                subscription.Online = true;
+                Log.Debug("Streamer {channelId} is now online", subscription.StreamerId);
+
+                var channel = _discord.GetChannel(subscription.SubscriptionInfo.Channel);
+                if (channel is ISocketMessageChannel c)
+                {
+                    var mentionString = string.IsNullOrEmpty(subscription.SubscriptionInfo.MentionString) ? "" : subscription.SubscriptionInfo.MentionString + ", ";
+                    var game = streamInfo?.Game;
+                    var name = streamInfo?.Channel.DisplayName.EscapeDiscordCharacters();
+                    var url = streamInfo?.Channel.Url;
+                    await c.SendMessageAsync($"{mentionString}{name} is now online playing {game} over at {url} !");
                 }
             }
 

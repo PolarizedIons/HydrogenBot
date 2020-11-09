@@ -53,10 +53,10 @@ namespace HydrogenBot.Providers
                 return false;
             }
 
-            var streamInfo = await _twitch.StreamInfo(twitchId);
+            var streamInfo = (await _twitch.BatchStreamInfo(new[] {twitchId})).ToArray();
             _db.TwitchSubscription.Add(new TwitchSubscription
             {
-                Online = streamInfo.IsOnline,
+                Online = streamInfo.Length > 0,
                 StreamerId = twitchId,
                 SubscriptionInfo = new SubscriptionInfo
                 {

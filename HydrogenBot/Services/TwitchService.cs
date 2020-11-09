@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using HydrogenBot.Extentions;
 using HydrogenBot.Models;
 using HydrogenBot.Models.Twitch;
 using Microsoft.Extensions.Configuration;
@@ -38,12 +40,22 @@ namespace HydrogenBot.Services
             return userDto;
         }
 
-        public async Task<TwitchSteamInfoResponse> StreamInfo(uint channelId)
+        public async Task<IEnumerable<TwitchStreamInfo>> BatchStreamInfo(IEnumerable<uint> channelIds)
         {
-            var res = await _httpClient.GetAsync($"https://api.twitch.tv/kraken/streams/{channelId}");
-            var json = await res.Content.ReadAsStringAsync();
-            var userDto = JsonSerializer.Deserialize<TwitchSteamInfoResponse>(json);
-            return userDto;
+            var batches = channelIds
+                .Batch(100)
+                .Select(async batchChannelIds =>
+                {
+                    var res = await _httpClient.GetAsync($"https://api.twitch.tv/kraken/streams?channel={string.Join(",", batchChannelIds)}");
+                    var json = await res.Content.ReadAsStringAsync();
+                    return JsonSerializer.Deserialize<TwitchSteamsInfoResponse>(json);
+                });
+
+            var completedBatches = await Task.WhenAll(batches);
+            return completedBatches
+                .Aggregate(new TwitchStreamInfo[0] as IEnumerable<TwitchStreamInfo>, 
+                    (current, completedBatch) => current.Concat(completedBatch.Steams)
+                );
         }
     }
 }

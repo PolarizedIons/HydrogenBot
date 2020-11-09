@@ -2,12 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace HydrogenBot.Models.Twitch
 {
-    public class TwitchSteamInfoResponse
+    public class TwitchSteamsInfoResponse
     {
-        [JsonPropertyName("stream")]
-        public TwitchStreamInfo? Steam { get; set; }
-
-        public bool IsOnline => Steam != null;
+        [JsonPropertyName("streams")]
+        public TwitchStreamInfo[] Steams { get; set; }
     }
 
     public class TwitchStreamInfo
@@ -26,5 +24,8 @@ namespace HydrogenBot.Models.Twitch
 
         [JsonPropertyName("url")]
         public string Url { get; set; } = null!;
+
+        [JsonPropertyName("_id")]
+        public uint Id { get; set; }
     }
 }
