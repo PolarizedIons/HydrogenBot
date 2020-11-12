@@ -73,7 +73,7 @@ namespace HydrogenBot.Providers
 
             if (currentSubscription != null)
             {
-                await commandContext.Channel.SendMessageAsync($"Error: <#{commandContext.Channel.Id}> is already subscribed to {username}'s twitch streams!");
+                await commandContext.Channel.SendMessageAsync($"Error: <#{notifyString.ChannelId}> is already subscribed to {username}'s twitch streams!");
                 return;
             }
 
@@ -90,7 +90,7 @@ namespace HydrogenBot.Providers
             });
 
             await _db.SaveChangesAsync();
-            await commandContext.Channel.SendMessageAsync($"<#{commandContext.Channel.Id}> is now subscribed to {username}'s twitch streams!");
+            await commandContext.Channel.SendMessageAsync($"<#{notifyString.ChannelId}> is now subscribed to {username}'s twitch streams!");
         }
 
         public async Task Unsubscribe(NotifyString notifyString, object? matchData, ICommandContext commandContext)
@@ -113,14 +113,14 @@ namespace HydrogenBot.Providers
 
             if (subscription == null)
             {
-                await commandContext.Channel.SendMessageAsync($"Error: <#{commandContext.Channel.Id}> is not subscribed to {username}'s twitch streams!");
+                await commandContext.Channel.SendMessageAsync($"Error: <#{notifyString.ChannelId}> is not subscribed to {username}'s twitch streams!");
                 return;
             }
 
             subscription.DeletedAt = DateTime.UtcNow;
             subscription.SubscriptionInfo.DeletedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
-            await commandContext.Channel.SendMessageAsync($"<#{commandContext.Channel.Id}> is now unsubscribed from {username}'s twitch streams!");
+            await commandContext.Channel.SendMessageAsync($"<#{notifyString.ChannelId}> is now unsubscribed from {username}'s twitch streams!");
         }
     }
 }
