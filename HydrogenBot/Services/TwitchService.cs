@@ -54,7 +54,7 @@ namespace HydrogenBot.Services
             var completedBatches = await Task.WhenAll(batches);
             return completedBatches
                 .Aggregate(new TwitchStreamInfo[0] as IEnumerable<TwitchStreamInfo>, 
-                    (current, completedBatch) => current.Concat(completedBatch.Steams)
+                    (current, completedBatch) => current.Concat(completedBatch.Streams)
                 );
         }
     }

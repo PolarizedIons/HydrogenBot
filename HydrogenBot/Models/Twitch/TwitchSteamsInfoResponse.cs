@@ -2,28 +2,28 @@ using System.Text.Json.Serialization;
 
 namespace HydrogenBot.Models.Twitch
 {
-    public class TwitchSteamsInfoResponse
+    public struct TwitchSteamsInfoResponse
     {
         [JsonPropertyName("streams")]
-        public TwitchStreamInfo[] Steams { get; set; }
+        public TwitchStreamInfo[] Streams { get; set; }
     }
 
-    public class TwitchStreamInfo
+    public struct TwitchStreamInfo
     {
         [JsonPropertyName("game")]
-        public string Game { get; set; } = null!;
+        public string Game { get; set; }
 
         [JsonPropertyName("channel")]
-        public TwitchStreamChannel Channel { get; set; } = null!;
+        public TwitchStreamChannel Channel { get; set; }
     }
 
-    public class TwitchStreamChannel
+    public struct TwitchStreamChannel
     {
         [JsonPropertyName("display_name")]
-        public string DisplayName { get; set; } = null!;
+        public string DisplayName { get; set; }
 
         [JsonPropertyName("url")]
-        public string Url { get; set; } = null!;
+        public string Url { get; set; }
 
         [JsonPropertyName("_id")]
         public uint Id { get; set; }
