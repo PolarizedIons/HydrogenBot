@@ -1,0 +1,23 @@
+name: BuildAndDeploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Container & Publish to Github Registry
+        uses: elgohr/Publish-Docker-Github-Action@2.14
+        with:
+          name: polarizedions/HydrogenBot/HydrogenBot
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          tags: "latest,v1,v1.${{ github.run_number }}"
+          dockerfile: ./HydrogenBot/Dockerfile
