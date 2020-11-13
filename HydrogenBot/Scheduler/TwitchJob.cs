@@ -45,7 +45,7 @@ namespace HydrogenBot.Scheduler
                     ? isOnlineCache[subscription.StreamerId]
                     : (TwitchStreamInfo?) null;
                 var wasOnline = subscription.Online;
-                var isOnlineNow = streamInfo == null;
+                var isOnlineNow = streamInfo != null;
 
                 if (wasOnline && !isOnlineNow)
                 {
