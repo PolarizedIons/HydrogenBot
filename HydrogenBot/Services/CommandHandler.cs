@@ -63,6 +63,12 @@ namespace HydrogenBot.Services
 
         private async Task OnCommandExecutedAsync(Optional<CommandInfo> command, ICommandContext context, IResult result)
         {
+            // We don't care about unknown commands
+            if (result.Error == CommandError.UnknownCommand)
+            {
+                return;
+            }
+
             if (!string.IsNullOrEmpty(result.ErrorReason))
             {
                 await context.Channel.SendMessageAsync("Error: " + result.ErrorReason);
