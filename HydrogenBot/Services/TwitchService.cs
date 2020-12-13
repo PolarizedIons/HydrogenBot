@@ -42,6 +42,11 @@ namespace HydrogenBot.Services
 
         public async Task<IEnumerable<TwitchStreamInfo>> BatchStreamInfo(IEnumerable<uint> channelIds)
         {
+            if (!channelIds.Any())
+            {
+                return new TwitchStreamInfo[0];
+            }
+
             var batches = channelIds
                 .Batch(100)
                 .Select(async batchChannelIds =>

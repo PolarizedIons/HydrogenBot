@@ -55,6 +55,12 @@ namespace HydrogenBot.Providers
 
         public async Task Subscribe(NotifyString notifyString, object? matchData, ICommandContext commandContext)
         {
+            if (notifyString.ServiceConfig.ToLowerInvariant() != "goes live")
+            {
+                await commandContext.Channel.SendMessageAsync($"Error! Invalid action; Valid actions: `goes live`!");
+                return;
+            }
+
             var username = GetUsernameFromUrl(notifyString.ServiceId);
             var twitchId = (uint)(matchData ?? 0);
             if (twitchId == 0)
@@ -95,6 +101,12 @@ namespace HydrogenBot.Providers
 
         public async Task Unsubscribe(NotifyString notifyString, object? matchData, ICommandContext commandContext)
         {
+            if (notifyString.ServiceConfig.ToLowerInvariant() != "goes live")
+            {
+                await commandContext.Channel.SendMessageAsync($"Error! Invalid action; Valid actions: `goes live`!");
+                return;
+            }
+
             var username = GetUsernameFromUrl(notifyString.ServiceId);
             var twitchId = (uint)(matchData ?? 0);
             if (twitchId == 0)

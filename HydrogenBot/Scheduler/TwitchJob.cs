@@ -32,10 +32,10 @@ namespace HydrogenBot.Scheduler
         {
             Log.Debug("Checking Twitch for livestreams.");
             var subscriptions = _db.TwitchSubscription.AsQueryable()
-                .Where(x => x.DeletedAt == null)
-                .Include(x => x.SubscriptionInfo);
+                .Where(x => x.DeletedAt == null && x.SubscriptionInfo.DeletedAt == null)
+                .Include(x => x.SubscriptionInfo).ToList();
 
-            var channelIds = await subscriptions.Select(x => x.StreamerId).ToListAsync();
+            var channelIds = subscriptions.Select(x => x.StreamerId).Distinct();
             var streamInfos = await _twitch.BatchStreamInfo(channelIds);
             var isOnlineCache = streamInfos.ToDictionary(streamInfo => streamInfo.Channel.Id);
 
@@ -69,7 +69,7 @@ namespace HydrogenBot.Scheduler
                     var game = streamInfo?.Game;
                     var name = streamInfo?.Channel.DisplayName.EscapeDiscordCharacters();
                     var url = streamInfo?.Channel.Url;
-                    await c.SendMessageAsync($"{mentionString}{name} is now online playing {game} over at {url} !");
+                    await c.SendMessageAsync($"{mentionString}{name} is now online, playing {game}, over at {url} !");
                 }
             }
 
