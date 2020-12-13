@@ -10,6 +10,7 @@ namespace HydrogenBot.Database
     {
         public DbSet<SubscriptionInfo> SubscriptionInfo { get; set; } = null!;
         public DbSet<TwitchSubscription> TwitchSubscription { get; set; } = null!;
+        public DbSet<TwitterSubscription> TwitterSubscription { get; set; } = null!;
 
         public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
         {
