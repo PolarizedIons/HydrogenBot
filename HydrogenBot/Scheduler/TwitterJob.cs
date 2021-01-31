@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using HydrogenBot.Database;
 using HydrogenBot.Database.DbModels;
@@ -64,7 +65,11 @@ namespace HydrogenBot.Scheduler
                             var tweetUrl = TweetUrlTemplate
                                 .Replace("{username}", username)
                                 .Replace("{id}", tweet.Id);
-                            await c.SendMessageAsync($"New tweet from {username}: {tweetUrl}");
+                            var msg = await c.SendMessageAsync($"New tweet from {username}: {tweetUrl}");
+                            if (c is INewsChannel)
+                            {
+                                await msg.CrosspostAsync();
+                            }
                         }
                     }
                 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using HydrogenBot.Database;
 using HydrogenBot.Extentions;
@@ -69,7 +70,11 @@ namespace HydrogenBot.Scheduler
                     var game = streamInfo?.Game;
                     var name = streamInfo?.Channel.DisplayName.EscapeDiscordCharacters();
                     var url = streamInfo?.Channel.Url;
-                    await c.SendMessageAsync($"{mentionString}{name} is now online, playing {game}, over at {url} !");
+                    var msg = await c.SendMessageAsync($"{mentionString}{name} is now online, playing {game}, over at {url} !");
+                    if (c is INewsChannel)
+                    {
+                        await msg.CrosspostAsync();
+                    }
                 }
             }
 
