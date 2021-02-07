@@ -62,10 +62,11 @@ namespace HydrogenBot.Scheduler
                     {
                         foreach (var tweet in userTweets)
                         {
+                            var mentionString = string.IsNullOrEmpty(tweetSubscription.SubscriptionInfo.MentionString) ? "" : tweetSubscription.SubscriptionInfo.MentionString + ", ";
                             var tweetUrl = TweetUrlTemplate
                                 .Replace("{username}", username)
                                 .Replace("{id}", tweet.Id);
-                            var msg = await c.SendMessageAsync($"New tweet from {username}: {tweetUrl}");
+                            var msg = await c.SendMessageAsync($"{mentionString}New tweet from {username}: {tweetUrl}");
                             if (c is INewsChannel)
                             {
                                 await msg.CrosspostAsync();
